@@ -172,7 +172,8 @@ static void test_dsa_signature_sign_memory(const int use_armour,
     ops_parse_info_t *pinfo=NULL;
     validate_data_cb_arg_t validate_arg;
 
-    mem=ops_sign_buf(input, input_len, OPS_SIG_TEXT, skey, use_armour);
+    mem=ops_sign_buf(input, input_len, OPS_SIG_TEXT, skey, use_armour,
+		     ops_true);
 
     if (debug)
         fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");

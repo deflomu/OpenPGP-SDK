@@ -387,6 +387,8 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 
     hash->init(hash);
 
+#define BODYSIZE 4096
+    body->data = malloc(BODYSIZE);
     body->length=0;
     total=0;
     for( ; ; )
@@ -433,7 +435,7 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 		
 	body->data[body->length++]=c;
 	++total;
-	if(body->length == sizeof body->data)
+	if(body->length == BODYSIZE)
 	    {
             if (debug)
                 { fprintf(stderr,"Got body (2):\n%s\n",body->data); }
@@ -445,6 +447,8 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
     assert(body->data[0] == '\n');
     assert(body->length == 1);
     /* don't send that one character, because its part of the trailer. */
+
+    free(body->data);
 
     trailer->hash=hash;
     CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER,&content2);

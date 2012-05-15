@@ -78,11 +78,13 @@ typedef struct validate_data_cb_arg
         LITERAL_DATA,
         SIGNED_CLEARTEXT
         } use; /*<! this is set to indicate what kind of data we have */
+
     union
-        {
-        ops_literal_data_body_t literal_data_body; /*<! Used to hold Literal Data */
-        ops_signed_cleartext_body_t signed_cleartext_body; /*<! Used to hold Signed Cleartext */
-        } data; /*<! the data itself */
+	{
+	ops_literal_data_body_t literal_data_body; /*<! Used to hold Literal Data */
+	ops_signed_cleartext_body_t signed_cleartext_body; /*<! Used to hold Signed Cleartext */
+	} data;
+
     unsigned char hash[OPS_MAX_HASH_SIZE]; /*<! the hash */
     const ops_keyring_t *keyring; /*<! keyring to use */
     validate_reader_arg_t *rarg; /*<! reader-specific arg */
@@ -98,5 +100,4 @@ ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
 
 ops_boolean_t ops_validate_file(ops_validate_result_t* result, const char* filename, const int armoured, const ops_keyring_t* keyring);
 ops_boolean_t ops_validate_mem(ops_validate_result_t *result, ops_memory_t* mem, const int armoured, const ops_keyring_t* keyring);
-
-// EOF
+ops_boolean_t ops_validate_detached_signature(const void *literal_data, unsigned int literal_data_length, const unsigned char *signature_packet, unsigned int signature_packet_length,const ops_keydata_t *signers_key) ;

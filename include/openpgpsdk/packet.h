@@ -127,8 +127,6 @@ typedef enum
 #define OPS_PTAG_NF_CONTENT_TAG_SHIFT	0
 
 
-
-
 /** Structure to hold one parse error string. */
 typedef struct
     {
@@ -697,7 +695,7 @@ typedef struct
 typedef struct
     {
     unsigned			length;
-    unsigned char		data[8192];
+    unsigned char		*data;
     } ops_literal_data_body_t;
 
 /** ops_mdc_t */
@@ -743,7 +741,7 @@ typedef struct
 typedef struct
     {
     unsigned			length;
-    unsigned char		data[8192]; // \todo fix hard-coded value?
+    unsigned char		*data;
     } ops_signed_cleartext_body_t;
 
 /** ops_signed_cleartext_trailer_t */
@@ -915,8 +913,9 @@ void ops_init(void);
 void ops_finish(void);
 void ops_keyid(unsigned char keyid[OPS_KEY_ID_SIZE],
 	       const ops_public_key_t *key);
-void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
+void ops_fingerprint(ops_fingerprint_t *fp, const ops_public_key_t *key);
 void ops_public_key_free(ops_public_key_t *key);
+void ops_public_key_copy(ops_public_key_t *dst, const ops_public_key_t *src);
 void ops_user_id_free(ops_user_id_t *id);
 void ops_user_attribute_free(ops_user_attribute_t *att);
 void ops_signature_free(ops_signature_t *sig);
@@ -940,6 +939,7 @@ void ops_ss_embedded_signature_free(ops_ss_embedded_signature_t *ss_embedded_sig
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 void ops_secret_key_free(ops_secret_key_t *key);
+void ops_secret_key_copy(ops_secret_key_t *dst, const ops_secret_key_t *src);
 void ops_pk_session_key_free(ops_pk_session_key_t *sk);
 
 /* vim:set textwidth=120: */

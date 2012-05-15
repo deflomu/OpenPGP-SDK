@@ -1,6 +1,9 @@
 Changes since V0.9
 ==================
 
+  *) Memory leak fixes and some bug fixes.
+     [Cyril Soler <cyril.soler@imag.fr>]
+
   *) Various warnings from gcc 4.6 fixed.
      [Brian Lewis <brian@lorf.org>]
 

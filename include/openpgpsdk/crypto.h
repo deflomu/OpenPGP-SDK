@@ -155,14 +155,15 @@ void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
 void ops_reader_pop_decrypt(ops_parse_info_t *pinfo);
 
 // Hash everything that's read
-void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash);
+void ops_reader_push_hash(ops_parse_info_t *pinfo, ops_hash_t *hash);
 void ops_reader_pop_hash(ops_parse_info_t *pinfo);
 
-int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
-		    const ops_secret_key_t *skey);
+int ops_decrypt_and_unencode_mpi(unsigned char *buf,
+				 unsigned buflen, const BIGNUM *encmpi,
+				 const ops_secret_key_t *skey);
 ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *buf, const size_t buflen,
-			      const ops_public_key_t *pkey,
-			      ops_pk_session_key_parameters_t *spk);
+				  const ops_public_key_t *pkey,
+				  ops_pk_session_key_parameters_t *spk);
 
 
 // Encrypt everything that's written
@@ -170,14 +171,34 @@ struct ops_key_data;
 void ops_writer_push_encrypt(ops_create_info_t *info,
                              const struct ops_key_data *key);
 
-ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite);
-ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_filename, ops_keyring_t *keyring, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite,ops_parse_cb_t* cb_get_passphrase);
-extern void ops_encrypt_stream(ops_create_info_t* cinfo, const ops_keydata_t* public_key, const ops_secret_key_t* secret_key, const ops_boolean_t compress, const ops_boolean_t use_armour);
-
+ops_boolean_t ops_encrypt_file(const char* input_filename,
+			       const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite);
+ops_boolean_t ops_decrypt_file(const char* input_filename,
+			       const char* output_filename,
+			       ops_keyring_t *keyring,
+			       const ops_boolean_t use_armour,
+			       const ops_boolean_t allow_overwrite,
+			       ops_parse_cb_t* cb_get_passphrase);
+extern void ops_encrypt_stream(ops_create_info_t* cinfo,
+			       const ops_keydata_t* public_key,
+			       const ops_secret_key_t* secret_key,
+			       const ops_boolean_t compress,
+			       const ops_boolean_t use_armour);
+ops_boolean_t ops_decrypt_memory(const unsigned char *encrypted_memory,
+				 int em_length,
+				 unsigned char **decrypted_memory,
+				 int *out_length,  ops_keyring_t* keyring,
+				 const ops_boolean_t use_armour,
+				 ops_parse_cb_t* cb_get_passphrase) ;
 // Keys
-ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e, ops_keydata_t* keydata);
-ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsigned long e, ops_user_id_t * userid);
+ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e,
+				       ops_keydata_t* keydata);
+ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits,
+						 const unsigned long e,
+						 ops_user_id_t * userid);
 
 int ops_dsa_size(const ops_dsa_public_key_t *dsa);
-DSA_SIG* ops_dsa_sign(unsigned char* hashbuf, unsigned hashsize, const ops_dsa_secret_key_t *sdsa, const ops_dsa_public_key_t *dsa);
+DSA_SIG* ops_dsa_sign(unsigned char* hashbuf, unsigned hashsize,
+		      const ops_dsa_secret_key_t *sdsa,
+		      const ops_dsa_public_key_t *dsa);
 #endif

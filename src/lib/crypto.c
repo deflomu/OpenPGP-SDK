@@ -179,8 +179,11 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
     int fd_out=0;
 
     ops_create_info_t *cinfo;
-
+#ifdef WINDOWS_SYS
     fd_in=open(input_filename, O_RDONLY | O_BINARY);
+#else
+    fd_in=open(input_filename, O_RDONLY );
+#endif
     if(fd_in < 0)
         {
         perror(input_filename);
@@ -264,6 +267,89 @@ extern void ops_encrypt_stream(ops_create_info_t* cinfo,
 	ops_writer_push_signed(cinfo, OPS_SIG_BINARY, secret_key);
     else
 	ops_writer_push_literal(cinfo);
+    }
+
+/**
+   \ingroup HighLevel_Crypto
+   \brief Decrypt a chunk of memory, containing a encrypted stream.
+   \param input_filename Name of file to be decrypted
+   \param output_filename Name of file to write to. If NULL, the filename is constructed from the input filename, following GPG conventions.
+   \param keyring Keyring to use
+   \param use_armour Expect armoured text, if set
+   \param allow_overwrite Allow output file to overwritten, if set.
+   \param cb_get_passphrase Callback to use to get passphrase
+*/
+
+ops_boolean_t ops_decrypt_memory(const unsigned char *encrypted_memory,
+				 int em_length,
+				 unsigned char **decrypted_memory,
+				 int *out_length, ops_keyring_t *keyring,
+				 const ops_boolean_t use_armour,
+				 ops_parse_cb_t *cb_get_passphrase)
+    {
+
+    //
+    ops_parse_info_t *pinfo=NULL;
+
+    // setup for reading from given input file
+
+    ops_memory_t *input_mem = ops_memory_new() ;
+    ops_memory_add(input_mem,encrypted_memory,em_length) ;
+
+    ops_setup_memory_read(&pinfo, input_mem, NULL, callback_write_parsed,
+			  ops_false);
+
+    if (pinfo == NULL)
+	 {
+	 perror("cannot create memory read");
+	 return ops_false;
+	 }
+
+    // setup memory chunk 
+
+    ops_memory_t *output_mem = ops_memory_new() ;
+
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &output_mem,0) ;
+
+    if (output_mem == NULL)
+	{ 
+	perror("Cannot create output memory"); 
+	ops_teardown_memory_read(pinfo, input_mem);
+	return ops_false;
+	}
+
+    // \todo check for suffix matching armour param
+
+    // setup keyring and passphrase callback
+    pinfo->cbinfo.cryptinfo.keyring=keyring;
+    pinfo->cbinfo.cryptinfo.cb_get_passphrase=cb_get_passphrase;
+
+    // Set up armour/passphrase options
+
+    if (use_armour)
+        ops_reader_push_dearmour(pinfo);
+    
+    // Do it
+
+    ops_parse_and_print_errors(pinfo);
+
+    // Unsetup
+
+    if (use_armour)
+        ops_reader_pop_dearmour(pinfo);
+
+    ops_boolean_t res = ops_true;
+
+    // copy output memory to supplied buffer.
+    //
+    *out_length = ops_memory_get_length(output_mem);
+    *decrypted_memory = ops_mallocz(*out_length);
+    memcpy(*decrypted_memory, ops_memory_get_data(output_mem), *out_length);
+
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo, output_mem);
+    ops_teardown_memory_read(pinfo, input_mem);
+
+    return res;
     }
 
 /**
@@ -419,6 +505,7 @@ callback_write_parsed(const ops_parser_content_t *content_,
         break;
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE_PREV_WAS_BAD:
         //        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
         return cbinfo->cryptinfo.cb_get_passphrase(content_, cbinfo);
         break;

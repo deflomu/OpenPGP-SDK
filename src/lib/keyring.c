@@ -78,11 +78,12 @@ static void keydata_internal_free(ops_keydata_t *keydata)
     keydata->packets=NULL;
     keydata->npackets=0;
 
+    free(keydata->sigs);
+
     if(keydata->type == OPS_PTAG_CT_PUBLIC_KEY)
 	ops_public_key_free(&keydata->key.pkey);
     else
 	ops_secret_key_free(&keydata->key.skey);
-
     }
 
 /**
@@ -100,6 +101,100 @@ void ops_keydata_free(ops_keydata_t *keydata)
     keydata_internal_free(keydata);
     free(keydata);
     }
+
+// \todo check where userid pointers are copied
+/**
+\ingroup Core_Keys
+\brief Copy user id, including contents
+\param dst Destination User ID
+\param src Source User ID
+\note If dst already has a user_id, it will be freed.
+*/
+void ops_copy_userid(ops_user_id_t* dst, const ops_user_id_t* src)
+    {
+    int len=strlen((char *)src->user_id);
+    if (dst->user_id)
+        free(dst->user_id);
+    dst->user_id=ops_mallocz(len+1);
+
+    memcpy(dst->user_id, src->user_id, len);
+    }
+// \todo check where pkt pointers are copied
+/**
+\ingroup Core_Keys
+\brief Copy packet, including contents
+\param dst Destination packet
+\param src Source packet
+\note If dst already has a packet, it will be freed.
+*/
+void ops_copy_packet(ops_packet_t* dst, const ops_packet_t* src)
+    {
+    if (dst->raw)
+        free(dst->raw);
+    dst->raw=ops_mallocz(src->length);
+
+    dst->length=src->length;
+    memcpy(dst->raw, src->raw, src->length);
+    }
+
+
+
+/**
+\ingroup Core_Keys
+\brief Copies entire key data
+\param dst Destination key where to copy
+\param src Source key to copy
+*/
+void ops_keydata_copy(ops_keydata_t *dst,const ops_keydata_t *src)
+    {
+    unsigned n;
+
+    memset(dst, 0, sizeof(ops_keydata_t));
+
+    dst->uids = (ops_user_id_t*)ops_mallocz(src->nuids * sizeof(ops_user_id_t));
+    dst->nuids = src->nuids;
+    dst->nuids_allocated = src->nuids;
+
+    for(n=0 ; n < src->nuids ; ++n)
+	ops_copy_userid(&dst->uids[n],&src->uids[n]);
+
+    dst->packets = (ops_packet_t*)ops_mallocz(src->npackets * sizeof(ops_packet_t));
+    dst->npackets = src->npackets;
+    dst->npackets_allocated = src->npackets;
+
+    for(n=0 ; n < src->npackets ; ++n)
+	ops_copy_packet(&(dst->packets[n]),&(src->packets[n]));
+
+    dst->nsigs = src->nsigs;
+    dst->sigs = (sigpacket_t*)ops_mallocz(src->nsigs * sizeof(sigpacket_t));
+    dst->nsigs_allocated = src->nsigs;
+
+    for(n=0 ; n < src->nsigs ; ++n)
+	{
+	dst->sigs[n].userid = (ops_user_id_t*)ops_mallocz(sizeof(ops_user_id_t));
+	dst->sigs[n].packet = (ops_packet_t*)ops_mallocz(sizeof(ops_packet_t));
+	ops_copy_userid(dst->sigs[n].userid,src->sigs[n].userid);
+	ops_copy_packet(dst->sigs[n].packet,src->sigs[n].packet);
+	}
+
+    dst->key_id[0] = src->key_id[0];
+    dst->key_id[1] = src->key_id[1];
+    dst->key_id[2] = src->key_id[2];
+    dst->key_id[3] = src->key_id[3];
+    dst->key_id[4] = src->key_id[4];
+    dst->key_id[5] = src->key_id[5];
+    dst->key_id[6] = src->key_id[6];
+    dst->key_id[7] = src->key_id[7];
+    dst->type = src->type;
+    dst->key = src->key;
+    dst->fingerprint = src->fingerprint;
+
+    if(src->type == OPS_PTAG_CT_PUBLIC_KEY)
+	ops_public_key_copy(&dst->key.pkey,&src->key.pkey);
+    else                  
+	ops_secret_key_copy(&dst->key.skey,&src->key.skey);
+    }
+
 
 /**
  \ingroup HighLevel_KeyGeneral
@@ -266,6 +361,8 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_keydata_t *key,
 
     ops_parse(pinfo);
 
+    ops_parse_info_delete(pinfo);
+
     return arg.skey;
     }
 
@@ -362,42 +459,6 @@ const ops_keydata_t* ops_keyring_get_key_by_index(const ops_keyring_t *keyring, 
     if (index >= keyring->nkeys)
         return NULL;
     return &keyring->keys[index]; 
-    }
-
-// \todo check where userid pointers are copied
-/**
-\ingroup Core_Keys
-\brief Copy user id, including contents
-\param dst Destination User ID
-\param src Source User ID
-\note If dst already has a user_id, it will be freed.
-*/
-void ops_copy_userid(ops_user_id_t* dst, const ops_user_id_t* src)
-    {
-    int len=strlen((char *)src->user_id);
-    if (dst->user_id)
-        free(dst->user_id);
-    dst->user_id=ops_mallocz(len+1);
-
-    memcpy(dst->user_id, src->user_id, len);
-    }
-
-// \todo check where pkt pointers are copied
-/**
-\ingroup Core_Keys
-\brief Copy packet, including contents
-\param dst Destination packet
-\param src Source packet
-\note If dst already has a packet, it will be freed.
-*/
-void ops_copy_packet(ops_packet_t* dst, const ops_packet_t* src)
-    {
-    if (dst->raw)
-        free(dst->raw);
-    dst->raw=ops_mallocz(src->length);
-
-    dst->length=src->length;
-    memcpy(dst->raw, src->raw, src->length);
     }
 
 /**
@@ -623,7 +684,6 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
 
     //    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-
     fd=open(filename,O_RDONLY | O_BINARY);
     if(fd < 0)
         {
@@ -904,6 +964,47 @@ cb_keyring_read(const ops_parser_content_t *content_,
 	}
 
     return OPS_RELEASE_MEMORY;
+    }
+
+/**
+   \ingroup HighLevel_KeyringList
+
+   \brief Saves keyring to specified file
+
+   \param keyring  Keyring to save
+   \param armoured Save in ascii armoured format
+   \param output filename
+
+   \return ops_true is anything when ok
+*/
+
+ops_boolean_t ops_write_keyring_to_file(const ops_keyring_t *keyring,ops_boolean_t armoured,const char *filename)
+    {
+    ops_create_info_t *info;
+    int fd = ops_setup_file_write(&info, filename, ops_true);
+
+    if (fd < 0) 
+	{
+	fprintf(stderr,"ops_write_keyring(): ERROR: Cannot write to %s\n",
+		filename);
+	return ops_false;
+	}
+
+    int i;
+    for(i=0 ; i<keyring->nkeys ; ++i)
+	if(keyring->keys[i].key.pkey.algorithm  == OPS_PKA_RSA)
+	    ops_write_transferable_public_key(&keyring->keys[i],armoured,info);
+	else
+	    {
+	    fprintf(stdout, "ops_write_keyring: not writing key. Algorithm not handled: ");
+	    ops_print_public_keydata(&keyring->keys[i]);
+	    fprintf(stdout, "\n");
+	    }
+
+    ops_writer_close(info);
+    ops_create_info_delete(info);
+
+    return ops_true;
     }
 
 /*\@}*/

@@ -128,6 +128,7 @@ static unsigned public_key_length(const ops_public_key_t *key)
 	return mpi_length(key->key.rsa.n)+mpi_length(key->key.rsa.e);
 
     default:
+	fprintf(stderr,"Bad algorithm type in key: %d\n",key->algorithm) ;
 	assert(!"unknown key algorithm");
 	}
     /* not reached */
@@ -382,11 +383,11 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
 	   || !ops_write_mpi(key->key.rsa.p,info)
 	   || !ops_write_mpi(key->key.rsa.q,info)
 	   || !ops_write_mpi(key->key.rsa.u,info))
-        {
-        if (debug)
-            { fprintf(stderr,"4 x mpi not written - problem\n"); }
+	    {
+	    if (debug)
+		fprintf(stderr,"4 x mpi not written - problem\n");
 	    return ops_false;
-        }
+	    }
 
 	break;
 
@@ -402,9 +403,12 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
         return ops_false;
 
     ops_writer_pop(info);
-    
+
+    free(crypt.encrypt_key);
+    free(crypt.decrypt_key);
+
     return ops_true;
- }
+    }
 
 
 /**

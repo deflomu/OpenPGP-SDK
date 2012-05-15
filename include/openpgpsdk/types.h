@@ -42,6 +42,8 @@ typedef struct
 /** Boolean type */
 typedef unsigned ops_boolean_t;
 
+/** ops_content_tag_t */
+
 /* PTag Content Tags */
 /***************************/
 
@@ -52,6 +54,11 @@ typedef unsigned ops_boolean_t;
  * \see RFC4880 4.3
  * \see RFC4880 5.2.3.1
  */
+
+#ifndef __cplusplus
+typedef enum ops_content_tag_t ops_content_tag_t ;
+#endif
+
 enum ops_content_tag_t
     {
     OPS_PTAG_CT_RESERVED		= 0,	/*!< Reserved - a packet tag must not have this value */
@@ -145,6 +152,7 @@ enum ops_content_tag_t
     /* commands to the callback */
     OPS_PARSER_CMD_GET_SK_PASSPHRASE	=0x400,
     OPS_PARSER_CMD_GET_SECRET_KEY	=0x400+1,
+    OPS_PARSER_CMD_GET_SK_PASSPHRASE_PREV_WAS_BAD =0x400+2,
 
 
     /* Errors */
@@ -152,8 +160,15 @@ enum ops_content_tag_t
     OPS_PARSER_ERRCODE			=0x500+1, /*! < Internal Use: Parser Error with errcode returned */
     };
 
-/** ops_content_tag_t */
-typedef enum ops_content_tag_t ops_content_tag_t;
+/** Used to specify whether subpackets should be returned raw, parsed or ignored.
+ */
+
+enum ops_parse_type_t
+    {
+    OPS_PARSE_RAW,	/*!< Callback Raw */
+    OPS_PARSE_PARSED,	/*!< Callback Parsed */
+    OPS_PARSE_IGNORE, 	/*!< Don't callback */
+    };
 
 typedef struct _ops_crypt_t ops_crypt_t;
 
@@ -178,12 +193,6 @@ typedef unsigned char ops_ss_rr_code_t;
 
 /** Used to specify whether subpackets should be returned raw, parsed or ignored.
  */
-enum ops_parse_type_t
-    {
-    OPS_PARSE_RAW,	/*!< Callback Raw */
-    OPS_PARSE_PARSED,	/*!< Callback Parsed */
-    OPS_PARSE_IGNORE, 	/*!< Don't callback */
-    };
 
 typedef enum ops_parse_type_t ops_parse_type_t;
 

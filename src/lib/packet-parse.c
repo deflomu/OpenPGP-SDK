@@ -921,6 +921,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	break;
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE_PREV_WAS_BAD:
 	ops_cmd_get_passphrase_free(&c->content.secret_key_passphrase);
 	break;
 
@@ -997,10 +998,47 @@ void ops_public_key_free(ops_public_key_t *p)
 	}
     }
 
+void ops_public_key_copy(ops_public_key_t *dst,const ops_public_key_t *src)
+    {
+    *dst = *src ;
+
+    switch(src->algorithm)
+	{
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	dst->key.rsa.n = BN_dup(src->key.rsa.n);
+	dst->key.rsa.e = BN_dup(src->key.rsa.e);
+	break;
+
+    case OPS_PKA_DSA:
+	dst->key.dsa.p = BN_dup(src->key.dsa.p);
+	dst->key.dsa.q = BN_dup(src->key.dsa.q);
+	dst->key.dsa.g = BN_dup(src->key.dsa.g);
+	dst->key.dsa.y = BN_dup(src->key.dsa.y);
+	break;
+
+    case OPS_PKA_ELGAMAL:
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	dst->key.elgamal.p = BN_dup(src->key.elgamal.p);
+	dst->key.elgamal.g = BN_dup(src->key.elgamal.g);
+	dst->key.elgamal.y = BN_dup(src->key.elgamal.y);
+	break;
+
+	//case 0:
+	// nothing to free
+	//   break;
+
+    default:
+	assert(0);
+	}
+    }
+
+
 /**
    \ingroup Core_ReadPackets
 */
-static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
+static int parse_public_key_data(ops_public_key_t *key, ops_region_t *region,
 				 ops_parse_info_t *pinfo)
     {
     unsigned char c[1]="";
@@ -1213,6 +1251,7 @@ static int parse_user_id(ops_region_t *region,ops_parse_info_t *pinfo)
     C.user_id.user_id[region->length]='\0'; /* terminate the string */
 
     CBP(pinfo,OPS_PTAG_CT_USER_ID,&content);
+
     return 1;
     }
 
@@ -2072,8 +2111,7 @@ static int parse_literal_data(ops_region_t *region,ops_parse_info_t *pinfo)
 	{
 	unsigned l=region->length-region->length_read;
 
-	if(l > sizeof C.literal_data_body.data)
-	    l=sizeof C.literal_data_body.data;
+	C.literal_data_body.data = (unsigned char *)malloc(l) ;
 
 	if(!limited_read(C.literal_data_body.data,l,region,pinfo))
 	    return 0;
@@ -2120,6 +2158,34 @@ void ops_secret_key_free(ops_secret_key_t *key)
 	}
 
     ops_public_key_free(&key->public_key);
+    }
+
+void ops_secret_key_copy(ops_secret_key_t *dst,const ops_secret_key_t *src)
+    {
+    *dst = *src ;
+    ops_public_key_copy(&dst->public_key,&src->public_key);
+
+    switch(src->public_key.algorithm)
+	{
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	dst->key.rsa.d = BN_dup(src->key.rsa.d) ;
+	dst->key.rsa.p = BN_dup(src->key.rsa.p) ;
+	dst->key.rsa.q = BN_dup(src->key.rsa.q) ;
+	dst->key.rsa.u = BN_dup(src->key.rsa.u) ;
+	break;
+
+    case OPS_PKA_DSA:
+	dst->key.dsa.x = BN_dup(src->key.dsa.x) ;
+	break;
+
+    default:
+	fprintf(stderr,"ops_secret_key_copy: Unknown algorithm: %d (%s)\n",
+		src->public_key.algorithm,
+		ops_show_pka(src->public_key.algorithm));
+	//assert(0);
+	}
     }
 
 static int consume_packet(ops_region_t *region,ops_parse_info_t *pinfo,
@@ -2969,6 +3035,9 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	pinfo->rinfo.accumulated=NULL;
 	pinfo->rinfo.asize=0;
 	}
+    else
+       C.packet.raw = NULL ;
+
     pinfo->rinfo.alength=0;
 	
     if(r < 0)

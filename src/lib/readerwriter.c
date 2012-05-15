@@ -337,32 +337,38 @@ callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t
 */
 
 ops_parse_cb_return_t
-callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_cmd_get_secret_key(const ops_parser_content_t *content_,
+			    ops_parse_cb_info_t *cbinfo)
     {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+    const ops_parser_content_union_t* content=&content_->content;
     const ops_secret_key_t *secret;
     ops_parser_content_t pc;
 
     OPS_USED(cbinfo);
 
-//    ops_print_packet(content_);
-
     switch(content_->tag)
 	{
     case OPS_PARSER_CMD_GET_SECRET_KEY:
-        cbinfo->cryptinfo.keydata=ops_keyring_find_key_by_id(cbinfo->cryptinfo.keyring,content->get_secret_key.pk_session_key->key_id);
-        if (!cbinfo->cryptinfo.keydata || !ops_is_key_secret(cbinfo->cryptinfo.keydata))
+        cbinfo->cryptinfo.keydata = 
+	    ops_keyring_find_key_by_id(cbinfo->cryptinfo.keyring,
+			       content->get_secret_key.pk_session_key->key_id);
+        if (!cbinfo->cryptinfo.keydata
+	    || !ops_is_key_secret(cbinfo->cryptinfo.keydata))
             return 0;
 
         /* now get the key from the data */
         secret=ops_get_secret_key_from_data(cbinfo->cryptinfo.keydata);
-        while(!secret)
+	int tag_to_use = OPS_PARSER_CMD_GET_SK_PASSPHRASE ;
+	int nbtries = 0 ;
+
+	while( (!secret) && nbtries++ < 3)
             {
             if (!cbinfo->cryptinfo.passphrase)
                 {
                 memset(&pc,'\0',sizeof pc);
-                pc.content.secret_key_passphrase.passphrase=&cbinfo->cryptinfo.passphrase;
-                CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
+                pc.content.secret_key_passphrase.passphrase=
+		    &cbinfo->cryptinfo.passphrase;
+		CB(cbinfo, tag_to_use, &pc);
                 if (!cbinfo->cryptinfo.passphrase)
                     {
                     fprintf(stderr,"can't get passphrase\n");
@@ -370,9 +376,17 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
                     }
                 }
             /* then it must be encrypted */
-            secret=ops_decrypt_secret_key_from_data(cbinfo->cryptinfo.keydata,cbinfo->cryptinfo.passphrase);
+            secret=ops_decrypt_secret_key_from_data(cbinfo->cryptinfo.keydata,
+						  cbinfo->cryptinfo.passphrase);
+	    
+	    free(cbinfo->cryptinfo.passphrase) ;
+	    cbinfo->cryptinfo.passphrase = NULL ;
+	    tag_to_use = OPS_PARSER_CMD_GET_SK_PASSPHRASE_PREV_WAS_BAD ;
             }
-        
+
+	if(!secret)
+	    return 0;
+
         *content->get_secret_key.secret_key=secret;
         break;
 
@@ -380,7 +394,7 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
         //        return callback_general(content_,cbinfo);
         break;
 	}
-    
+
     return OPS_RELEASE_MEMORY;
     }
 
