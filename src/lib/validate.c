@@ -365,16 +365,18 @@ validate_data_cb(const ops_parser_content_t *content_,
         break;
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
-	if(arg->data.literal_data_body.data != NULL)
-	    free(arg->data.literal_data_body.data);
+	// These frees cause a core dump, but I think they're also needed
+	// to avoid a potential memory leak.
+	//if(arg->data.literal_data_body.data != NULL)
+	//    free(arg->data.literal_data_body.data);
 	arg->data.literal_data_body=content->literal_data_body;
         arg->use=LITERAL_DATA;
         return OPS_KEEP_MEMORY;
         break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
-	if(arg->data.signed_cleartext_body.data != NULL)
-	    free(arg->data.signed_cleartext_body.data);
+	//if(arg->data.signed_cleartext_body.data != NULL)
+	//    free(arg->data.signed_cleartext_body.data);
 	arg->data.signed_cleartext_body=content->signed_cleartext_body;
         arg->use=SIGNED_CLEARTEXT;
         return OPS_KEEP_MEMORY;
