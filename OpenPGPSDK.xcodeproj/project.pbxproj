@@ -346,9 +346,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		5510D62B15D3C58B00CD177C /* openpgpsdk */ = {
+		5510D62B15D3C58B00CD177C /* OpenPGPSDK */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5510D63015D3C58B00CD177C /* Build configuration list for PBXNativeTarget "openpgpsdk" */;
+			buildConfigurationList = 5510D63015D3C58B00CD177C /* Build configuration list for PBXNativeTarget "OpenPGPSDK" */;
 			buildPhases = (
 				5510D6C015D3CAF900CD177C /* ShellScript */,
 				5510D62815D3C58B00CD177C /* Sources */,
@@ -359,7 +359,7 @@
 			);
 			dependencies = (
 			);
-			name = openpgpsdk;
+			name = OpenPGPSDK;
 			productName = openpgpsdk;
 			productReference = 5510D62C15D3C58B00CD177C /* libopenpgpsdk.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
@@ -373,7 +373,7 @@
 				LastUpgradeCheck = 0450;
 				ORGANIZATIONNAME = "Florian Mutter";
 			};
-			buildConfigurationList = 5510D62615D3C58B00CD177C /* Build configuration list for PBXProject "openpgpsdk" */;
+			buildConfigurationList = 5510D62615D3C58B00CD177C /* Build configuration list for PBXProject "OpenPGPSDK" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -385,7 +385,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5510D62B15D3C58B00CD177C /* openpgpsdk */,
+				5510D62B15D3C58B00CD177C /* OpenPGPSDK */,
 			);
 		};
 /* End PBXProject section */
@@ -509,7 +509,7 @@
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = openpgpsdk;
 			};
 			name = Debug;
 		};
@@ -518,14 +518,14 @@
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = openpgpsdk;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5510D62615D3C58B00CD177C /* Build configuration list for PBXProject "openpgpsdk" */ = {
+		5510D62615D3C58B00CD177C /* Build configuration list for PBXProject "OpenPGPSDK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5510D62E15D3C58B00CD177C /* Debug */,
@@ -534,7 +534,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5510D63015D3C58B00CD177C /* Build configuration list for PBXNativeTarget "openpgpsdk" */ = {
+		5510D63015D3C58B00CD177C /* Build configuration list for PBXNativeTarget "OpenPGPSDK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5510D63115D3C58B00CD177C /* Debug */,
